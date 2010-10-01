@@ -45,7 +45,7 @@ class Config:
       if os.path.exists(os.path.expanduser('~/.mtcbot/config')):
         self.configfile = os.path.expanduser('~/.mtcbot/config')
       elif os.path.exists('/etc/mtcbot/config'):
-        self.configfile = os.path.exists('/etc/mtcbot/config')
+        self.configfile = '/etc/mtcbot/config'
       else:
         raise MTCBotError('Config file not found.')
 
