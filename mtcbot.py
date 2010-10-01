@@ -1,29 +1,27 @@
 #!/usr/bin/python
 
-# (c)2010 Ed Marczak (marczak@radiotope.com)
-# MacTech Conference Bot
-# v1.4
-# 2010-01-10: Support config file for auth token values.
-# 2010-20-09: Switch to tweepy lib, support OAuth, improve error handling,
-#             watch rate limit and take appropriate action.
-# 2010-30-07: Add timeout support for Twitter functions
-# 2010-06-01: Initial version
+"""
+(c)2010 Ed Marczak (marczak@radiotope.com)
+MacTech Conference Bot
+v1.4
+2010-01-10: Support config file for auth token values.
+2010-20-09: Switch to tweepy lib, support OAuth, improve error handling,
+            watch rate limit and take appropriate action.
+2010-30-07: Add timeout support for Twitter functions
+2010-06-01: Initial version
+"""
 
 import ConfigParser
 import datetime
 import os
-import signal
 import sys
 import time
 import tweepy
 
 _FN_TIMEOUT = 22
 
-class TimeoutFunctionException(Exception):
-  """Exception to raise on a timeout."""
-  pass
-
 class Error(Exception):
+  """Generic error class."""
   pass
 
 
@@ -33,6 +31,11 @@ class MTCBotError(Error):
 
 
 class Config:
+  """Read and store config.
+
+  Args:
+    path: String with alternate config file location.
+  """
 
   def __init__(self, path = None):
     # Look for config file in common locations, or use supplied path.
@@ -54,34 +57,9 @@ class Config:
       self.oauthkeys[i[0]] = i[1]
 
 
-def TimeoutHandler(signum, frame):
-    debug_print ('Signal handler called with signal %s.' % signum)
-    # raise TimeoutFunctionException()
-
-
-class TimeoutFunction:
-
-  def __init__(self, function, timeout):
-    self.timeout = timeout
-    self.function = function
-
-  def handle_timeout(self, signum, frame):
-    raise TimeoutFunctionException()
-
-  def __call__(self, *args):
-    old = signal.signal(signal.SIGALRM, self.handle_timeout)
-    signal.alarm(self.timeout)
-    try: 
-      result = self.function(*args)
-    finally: 
-      signal.signal(signal.SIGALRM, old)
-    signal.alarm(0)
-    return result
-
-
 def debug_print(msg):
+  """Quick and dirty stdout printing with timestamp."""
   debug_enabled = True
-  """print if debugging enabled"""
   t = time.localtime()
   timestr = ('%02d-%02d-%02d %02d:%02d:%02d' %
             (t[0], t[1], t[2], t[3], t[4], t[5]))
@@ -90,6 +68,7 @@ def debug_print(msg):
 
 
 class MTCBackoff():
+  """Global reference for current backoff amount."""
 
   def __init__(self):
     self.backoff = 0
@@ -97,9 +76,11 @@ class MTCBackoff():
     self.rest_time = self.base_rest_time
 
   def get_backoff(self):
+    """Getter for backoff."""
     return self.backoff
 
   def set_backoff(self, backoff):
+    """Setter for backoff."""
     self.backoff = backoff
 
 
@@ -150,6 +131,7 @@ class Followers:
     return self.num_friends
 
   def sync(self):
+    """Sync friends to followers."""
     # Get who follows us.
     follower_ids = self.get_followers()
     # Get who we follow.
@@ -186,13 +168,13 @@ def main():
                             config.oauthkeys['access_secret'])
       api = tweepy.API(auth)
     except:
-      raise MTCBotError()
+      debug_print('Could not get auth - Will retry.')
       MTCBotRest(backoff.get_backoff())
 
   last_check = 0
   followers = Followers(api)
   while True:
-    """Main run loop."""
+    # Main run loop.
     try:
       rate_limit = api.rate_limit_status()
     except:
@@ -227,7 +209,6 @@ def main():
         followers.sync()
         follow_sync = 1
       except:
-        pass
         debug_print('*** Missed sync - twitter error ***')
         follow_sync = 0
       if follow_sync:
@@ -243,7 +224,6 @@ def main():
       CheckDM(api)
     except:
       debug_print('*** Missed DM Check - twitter error ***')
-      pass
 
     # If we made it this far, reset backoff.
     backoff.set_backoff(0)
