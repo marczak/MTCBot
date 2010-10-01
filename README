@@ -1,0 +1,13 @@
+mtcbot: The MacTech Conference Twitter reflector bot
+author: Edward Marczak (marczak@radiotope.com)
+
+About:
+Twitter is easy to use, low bandwidth, available on nearly every platform/device and accounts are free. We wanted a utility that conference attendees could use as a back-channel during the conference. We chose to build one on top of Twitter.
+
+Requirements:
+Requires a python interpreter to run.
+Uses the Tweepy library for Twitter OAuth and API access (http://github.com/joshthecoder/tweepy).
+You'll need to register your application with Twitter (http://twitter.com/oauth_clients) and obtain consumer keys, authorize your application and get authorization keys. This page has a good description of the process: http://jmillerinc.com/2010/05/31/twitter-from-the-command-line-in-python-using-oauth/
+
+Configuration:
+Copy the sample_config file to /etc/mtcbot/config or ~/.mtcbot/config and edit it to contain the values for the keys you obtained for this application.
