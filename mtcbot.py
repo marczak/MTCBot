@@ -14,6 +14,7 @@ v1.4
 import ConfigParser
 import datetime
 import os
+import re
 import sys
 import time
 import tweepy
@@ -109,6 +110,7 @@ class Followers:
     self.friends_ids = []
     self.num_followers = 0
     self.num_friends = 0
+    self.tempignore = {}
 
   def get_followers(self):
     """Retrieve followers by ID."""
@@ -139,9 +141,18 @@ class Followers:
 
     # Compare
     for f in follower_ids:
-      if not f in friends_ids:
+      if (f not in friends_ids and
+          f not in self.tempignore):
         debug_print('Following user %s.' % f)
-        self.api.create_friendship(f)
+        try:
+	  theuser = self.api.create_friendship(f)
+        except tweepy.TweepError, e:
+          pattern = 'already requested to follow'
+          if re.search(pattern, e.reason):
+            self.tempignore[f] = datetime.datetime.now()
+            debug_print('Temporarily ignoring user %s' % f)
+          else:
+            debug_print('TweepError: %s' % e.reason)
 
 
 def CheckDM(api):
@@ -155,16 +166,17 @@ def CheckDM(api):
 
 
 def main():
+  """The main loop."""
   config = Config()
   backoff = MTCBackoff()
   # Init the API and sign in
-  auth = tweepy.OAuthHandler(config.oauthkeys['consumer_key'],
-                             config.oauthkeys['consumer_secret'])
-  auth.set_access_token(config.oauthkeys['access_key'],
-                        config.oauthkeys['access_secret'])
   api = False
   while not api:
     try:
+      auth = tweepy.OAuthHandler(config.oauthkeys['consumer_key'],
+                                 config.oauthkeys['consumer_secret'])
+      auth.set_access_token(config.oauthkeys['access_key'],
+                            config.oauthkeys['access_secret'])
       api = tweepy.API(auth)
     except:
       debug_print('Could not get auth - Will retry.')
