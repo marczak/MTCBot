@@ -155,17 +155,16 @@ def CheckDM(api):
 
 
 def main():
-  """The main loop."""
   config = Config()
   backoff = MTCBackoff()
   # Init the API and sign in
+  auth = tweepy.OAuthHandler(config.oauthkeys['consumer_key'],
+                             config.oauthkeys['consumer_secret'])
+  auth.set_access_token(config.oauthkeys['access_key'],
+                        config.oauthkeys['access_secret'])
   api = False
   while not api:
     try:
-      auth = tweepy.OAuthHandler(config.oauthkeys['consumer_key'],
-                                 config.oauthkeys['consumer_secret'])
-      auth.set_access_token(config.oauthkeys['access_key'],
-                            config.oauthkeys['access_secret'])
       api = tweepy.API(auth)
     except:
       debug_print('Could not get auth - Will retry.')
