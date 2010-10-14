@@ -145,7 +145,7 @@ class Followers:
           f not in self.tempignore):
         debug_print('Following user %s.' % f)
         try:
-	  theuser = self.api.create_friendship(f)
+          theuser = self.api.create_friendship(f)
         except tweepy.TweepError, e:
           pattern = 'already requested to follow'
           if re.search(pattern, e.reason):
@@ -159,8 +159,8 @@ def CheckDM(api):
   """Check for and post direct messages."""
   debug_print('Checking for direct messages')
   for message in tweepy.Cursor(api.direct_messages).items():
-    debug_print('Posting %s: %s' % (message.sender_id, message.text))
-    api.update_status('%s: %s' % (message.sender_id, message.text))
+    debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
+    api.update_status('%s: %s' % (message.sender_screen_name, message.text))
     # We really want to nuke this if we posted it
     api.destroy_direct_message(message.id)
 
