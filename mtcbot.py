@@ -153,6 +153,8 @@ class Followers:
             debug_print('Temporarily ignoring user %s' % f)
           else:
             debug_print('TweepError: %s' % e.reason)
+      elif f in self.tempignore:
+        debug_print('Still ignoring %s.' % f)
 
 
 def CheckDM(api):
