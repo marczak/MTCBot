@@ -182,7 +182,7 @@ def main():
 		    help='Don\'t check and retweet direct messages')
 
   (options, args) = parser.parse_args()
-
+  debug_print('Running with options %s' % options)
   config = Config()
   backoff = MTCBackoff()
   # Init the API and sign in
@@ -247,7 +247,7 @@ def main():
                    1800 - lastcheck_time)
       debug_print('Skipping follower sync - reset in %d.' % next_sync)
 
-    if not options['directmessages']:
+    if not options.directmessages:
       try:
         CheckDM(api)
       except:
