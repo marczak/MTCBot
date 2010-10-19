@@ -17,7 +17,8 @@ import os
 import re
 import sys
 import time
-import tweepy
+#import tweepy
+from optparse import OptionParser
 
 _FN_TIMEOUT = 22
 
@@ -168,7 +169,20 @@ def CheckDM(api):
 
 
 def main():
-  """The main loop."""
+  parser = OptionParser()
+  parser.add_option('--no-followsync',
+                    dest = 'followsync',
+                    default = False,
+                    action = 'store_false',
+		    help = r'Don\'t ever sync followers')
+  parser.add_option('--no-dm',
+                    dest = 'directmessages',
+                    default = False,
+                    action = 'store_false',
+		    help='Don\'t check and retweet direct messages')
+
+  (options, args) = parser.parse_args()
+
   config = Config()
   backoff = MTCBackoff()
   # Init the API and sign in
@@ -233,10 +247,13 @@ def main():
                    1800 - lastcheck_time)
       debug_print('Skipping follower sync - reset in %d.' % next_sync)
 
-    try:
-      CheckDM(api)
-    except:
-      debug_print('*** Missed DM Check - twitter error ***')
+    if not options['directmessages']:
+      try:
+        CheckDM(api)
+      except:
+        debug_print('*** Missed DM Check - twitter error ***')
+    else:
+      debug_print('Skipped checking DM due to command line switch.')
 
     # If we made it this far, reset backoff.
     backoff.set_backoff(0)
