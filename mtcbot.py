@@ -172,17 +172,18 @@ def main():
   parser = OptionParser()
   parser.add_option('--no-followsync',
                     dest = 'followsync',
-                    default = False,
+                    default = True,
                     action = 'store_false',
 		    help = r'Don\'t ever sync followers')
   parser.add_option('--no-dm',
-                    dest = 'directmessages',
-                    default = False,
+                    dest = 'skipdm',
+                    default = True,
                     action = 'store_false',
 		    help='Don\'t check and retweet direct messages')
 
   (options, args) = parser.parse_args()
   debug_print('Running with options %s' % options)
+
   config = Config()
   backoff = MTCBackoff()
   # Init the API and sign in
@@ -247,7 +248,7 @@ def main():
                    1800 - lastcheck_time)
       debug_print('Skipping follower sync - reset in %d.' % next_sync)
 
-    if not options.directmessages:
+    if not options.skipdm:
       try:
         CheckDM(api)
       except:
