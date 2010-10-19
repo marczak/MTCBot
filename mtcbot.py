@@ -177,8 +177,8 @@ def main():
 		    help = r'Don\'t ever sync followers')
   parser.add_option('--no-dm',
                     dest = 'skipdm',
-                    default = True,
-                    action = 'store_false',
+                    default = False,
+                    action = 'store_true',
 		    help='Don\'t check and retweet direct messages')
 
   (options, args) = parser.parse_args()
