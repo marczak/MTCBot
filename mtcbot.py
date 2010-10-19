@@ -17,7 +17,7 @@ import os
 import re
 import sys
 import time
-#import tweepy
+import tweepy
 from optparse import OptionParser
 
 _FN_TIMEOUT = 22
