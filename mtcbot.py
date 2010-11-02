@@ -167,7 +167,7 @@ def CheckDM(api, authed):
   """Check for and post direct messages."""
   debug_print('Checking for direct messages')
   for message in tweepy.Cursor(api.direct_messages).items():
-    if (len(authed) > 0 and message.sender_screen_name in authed) or len(authed) == 0:
+    if (len(authed) > 0 and message.sender_screen_name.lower() in authed) or len(authed) == 0:
       debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
       api.update_status('%s: %s' % (message.sender_screen_name, message.text))
       # We really want to nuke this if we posted it
@@ -211,7 +211,7 @@ def main():
     debug_print('Loading authfile from %s.' % authfile)
     try:
       for line in open(authfile, 'r'):
-        authed.append(line.strip())
+        authed.append(line.strip().lower())
     except IOError:
       debug_print('Could not load authfile from %s.' % authfile)
       sys.exit(12)
@@ -288,7 +288,7 @@ def main():
         authed = []
         try:
           for line in open(authfile, 'r'):
-            authed.append(line.strip())
+            authed.append(line.strip().lower())
         except IOError:
           debug_print('Could not load authfile from %s.' % authfile)
           sys.exit(12)
