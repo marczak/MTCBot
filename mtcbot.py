@@ -19,6 +19,7 @@ import sys
 import time
 import tweepy
 from optparse import OptionParser
+from stat import *
 
 _FN_TIMEOUT = 22
 
@@ -51,12 +52,16 @@ class Config:
       else:
         raise MTCBotError('Config file not found.')
 
+    # TODO(marczak): Do this properly and make less specific.
     debug_print('Using config file at %s' % self.configfile)
     self.oauthkeys = {}
+    self.keys = {}
     config = ConfigParser.SafeConfigParser()
     config.read(self.configfile)
     for i in config.items('Keys'):
       self.oauthkeys[i[0]] = i[1]
+    for i in config.items('Misc'):
+      self.keys[i[0]] = i[1]
 
 
 def debug_print(msg):
@@ -158,14 +163,17 @@ class Followers:
         debug_print('Still ignoring %s.' % f)
 
 
-def CheckDM(api):
+def CheckDM(api, authed):
   """Check for and post direct messages."""
   debug_print('Checking for direct messages')
   for message in tweepy.Cursor(api.direct_messages).items():
-    debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
-    api.update_status('%s: %s' % (message.sender_screen_name, message.text))
-    # We really want to nuke this if we posted it
-    api.destroy_direct_message(message.id)
+    if (len(authed) > 0 and message.sender_screen_name in authed) or len(authed) == 0:
+      debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
+      api.update_status('%s: %s' % (message.sender_screen_name, message.text))
+      # We really want to nuke this if we posted it
+      api.destroy_direct_message(message.id)
+    else:
+      debug_print('Message from unauthorized user %s, skipped' % message.sender_screen_name)
 
 
 def main():
@@ -179,12 +187,36 @@ def main():
                     dest = 'skipdm',
                     default = False,
                     action = 'store_true',
-		    help='Don\'t check and retweet direct messages')
+		    help = 'Don\'t check and retweet direct messages')
+  parser.add_option('--authfile',
+                    dest = 'authfile',
+                    default = False,
+                    action = 'store',
+                    help = r'File containing twitter IDs authorized'
+                            'to send DMs for re-tweet')
 
   (options, args) = parser.parse_args()
   debug_print('Running with options %s' % options)
 
   config = Config()
+
+  authed = []
+  authfile = False
+  if config.keys['authfile']:
+    authfile = config.keys['authfile']
+  # Let the command line override the config file
+  if options.authfile:
+    authfile = options.authfile
+  if authfile:
+    debug_print('Loading authfile from %s.' % authfile)
+    try:
+      for line in open(authfile, 'r'):
+        authed.append(line.strip())
+    except IOError:
+      debug_print('Could not load authfile from %s.' % authfile)
+      sys.exit(12)
+    authfiletime = os.stat(authfile)[ST_MTIME]
+
   backoff = MTCBackoff()
   # Init the API and sign in
   api = False
@@ -248,13 +280,29 @@ def main():
                    1800 - lastcheck_time)
       debug_print('Skipping follower sync - reset in %d.' % next_sync)
 
+    # Check for changes to the authfile.
+    if authfile:
+      # Re-read authfile
+      if authfiletime != os.stat(authfile)[ST_MTIME]:
+        debug_print('Re-loading authfile from %s.' % authfile)
+        authed = []
+        try:
+          for line in open(authfile, 'r'):
+            authed.append(line.strip())
+        except IOError:
+          debug_print('Could not load authfile from %s.' % authfile)
+          sys.exit(12)
+        # Get new file time
+        authfiletime = os.stat(authfile)[ST_MTIME]
+
     if not options.skipdm:
       try:
-        CheckDM(api)
+        CheckDM(api, authed)
       except:
         debug_print('*** Missed DM Check - twitter error ***')
     else:
       debug_print('Skipped checking DM due to command line switch.')
+
 
     # If we made it this far, reset backoff.
     backoff.set_backoff(0)
