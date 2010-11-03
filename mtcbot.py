@@ -169,7 +169,7 @@ def CheckDM(api, authed):
   for message in tweepy.Cursor(api.direct_messages).items():
     if (len(authed) > 0 and message.sender_screen_name.lower() in authed) or len(authed) == 0:
       debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
-      api.update_status('%s: %s' % (message.sender_screen_name, message.text))
+      api.update_status('%s: %s' % (message.sender_screen_name, message.text[:140]))
       # We really want to nuke this if we posted it
       api.destroy_direct_message(message.id)
     else:
@@ -182,12 +182,12 @@ def main():
                     dest = 'followsync',
                     default = True,
                     action = 'store_false',
-		    help = r'Don\'t ever sync followers')
+                    help = r'Don\'t ever sync followers')
   parser.add_option('--no-dm',
                     dest = 'skipdm',
                     default = False,
                     action = 'store_true',
-		    help = 'Don\'t check and retweet direct messages')
+                    help = 'Don\'t check and retweet direct messages')
   parser.add_option('--authfile',
                     dest = 'authfile',
                     default = False,
