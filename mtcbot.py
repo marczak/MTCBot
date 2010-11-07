@@ -169,7 +169,7 @@ def CheckDM(api, authed):
   for message in tweepy.Cursor(api.direct_messages).items():
     if (len(authed) > 0 and message.sender_screen_name.lower() in authed) or len(authed) == 0:
       debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
-      api.update_status('%s: %s' % (message.sender_screen_name, message.text[:140]))
+      api.update_status('%s: %s' % (message.sender_screen_name, message.text[:138-len(message.sender_screen_name)]))
       # We really want to nuke this if we posted it
       api.destroy_direct_message(message.id)
     else:
@@ -262,23 +262,26 @@ def main():
       MTCBotRest(backoff)
 
     # Only check followers once every 30 min as it damages the rate limit.
-    if (epoch_seconds > rate_limit['reset_time_in_seconds'] or
-        lastcheck_time > 1800):
-      debug_print('*** Syncing followers ***')
-      try:
-        followers.sync()
-        follow_sync = 1
-      except:
-        debug_print('*** Missed sync - twitter error ***')
-        follow_sync = 0
-      if follow_sync:
-        # Update last check only if there was a good sync.
-        t = datetime.datetime.now()
-        last_check = time.mktime(t.timetuple())
+    if options.followsync:
+      if (epoch_seconds > rate_limit['reset_time_in_seconds'] or
+          lastcheck_time > 1800):
+        debug_print('*** Syncing followers ***')
+        try:
+          followers.sync()
+          follow_sync = 1
+        except:
+          debug_print('*** Missed sync - twitter error ***')
+          follow_sync = 0
+        if follow_sync:
+          # Update last check only if there was a good sync.
+          t = datetime.datetime.now()
+          last_check = time.mktime(t.timetuple())
+      else:
+        next_sync = (secs_to_reset if secs_to_reset < lastcheck_time else
+                     1800 - lastcheck_time)
+        debug_print('Skipping follower sync - reset in %d.' % next_sync)
     else:
-      next_sync = (secs_to_reset if secs_to_reset < lastcheck_time else
-                   1800 - lastcheck_time)
-      debug_print('Skipping follower sync - reset in %d.' % next_sync)
+      debug_print('Skipping follow sync due to command line option')
 
     # Check for changes to the authfile.
     if authfile:
