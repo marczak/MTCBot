@@ -167,13 +167,18 @@ def CheckDM(api, authed):
   """Check for and post direct messages."""
   debug_print('Checking for direct messages')
   for message in tweepy.Cursor(api.direct_messages).items():
-    if (len(authed) > 0 and message.sender_screen_name.lower() in authed) or len(authed) == 0:
+    if (len(authed) > 0 and
+        message.sender_screen_name.lower() in authed) or
+        len(authed) == 0:
       debug_print('Posting %s: %s' % (message.sender_screen_name, message.text))
-      api.update_status('%s: %s' % (message.sender_screen_name, message.text[:138-len(message.sender_screen_name)]))
+      api.update_status('%s: %s' %
+                        (message.sender_screen_name,
+                         message.text[:138-len(message.sender_screen_name)]))
       # We really want to nuke this if we posted it
       api.destroy_direct_message(message.id)
     else:
-      debug_print('Message from unauthorized user %s, skipped' % message.sender_screen_name)
+      debug_print('Message from unauthorized user %s, skipped' %
+                  message.sender_screen_name)
 
 
 def main():
